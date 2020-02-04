@@ -1,0 +1,52 @@
+#!/bin/bash
+if [ "$2" = "" ] || [ "$2" = "." ] ; then lPods="$(seq 1 4)"
+else lPods="$2" ; fi
+
+case "$1" in
+    startComm)
+	while true; do 	nc -l -v 3333 2> status && ip=$(grep -o -P '(?<=from).*(?=port)' status) && echo "$ip" ;done	
+    ;;
+    ipl)
+	if [ "$2" = "" ] || [ "$2" = "*" ] ; then lPods=$(seq 1 4)
+	else lPods=$2 ; fi
+
+	PodCtl 0000 > /dev/null
+	kill -9 "$(ps -ef | pgrep "nc -l -v 3333" | pgrep -v pgrep | cut -c 10-22)" 2> /dev/null
+	rm /tmp/ipl* 2> /dev/null > /dev/null
+
+	sudo killall nc > /dev/null > /dev/null
+	$0 startComm & 
+
+	lP="0000"
+
+	for i in $lPods ; do
+		lP=$(echo "1"$lP | cut -c 1-4)
+		echo PodStart N° "$i"
+		mcmd "echo IPL Boot en cours ... > /tmp/iplNAME && { time nc -l 33NUM ; } 2>&1 | cat >> /tmp/iplNAME && mv /tmp/iplNAME /tmp/iplNAME.boot" async "$i"
+		PodCtl "$lP" > /dev/null
+		sleep 3
+	done	
+    ;;
+    ping)
+	mcmd "ping -c 1 IP" async "$2" "$3" "$4" "$5"
+    ;;
+    bench)
+	mssh "stress-ng --matrix 0 -t 5s --metrics-brief" async "$2" "$3" "$4" "$5"
+	$0 th
+    ;;
+    info)
+	#mssh "vcgencmd measure_temp" async $2 $3 $4 $5
+	mssh "{ cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq && vcgencmd measure_temp ;}" async "$2" "$3" "$4" "$5"
+    ;;
+    down)
+	mcmd 'rm /tmp/iplNAME*' async "$2" "$3" "$4" "$5" 2> /dev/null > /dev/null
+	mcmd "ssh IP sudo shutdown now" async "$2" "$3" "$4" "$5" 2> /dev/null
+	sleep 10
+	PodCtl off $lPods 
+	
+    ;;
+    status)
+	cat
+	 /tmp/ipl* 2> /dev/null
+    ;;	
+esac

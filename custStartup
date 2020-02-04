@@ -1,0 +1,50 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides: OpenVPN
+# Required-Start: $syslog $network
+# Required-Stop:
+# Should-Start:
+# Should-Stop:
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Start and stop OpenVPN
+# Description: OpenVPN
+### END INIT INFO
+
+fichName="custStartup"
+
+# Do NOT change anything below this line unless you know what you are doing!
+
+case "$1" in
+start)
+	echo "Collect info et patch eeprom"
+	sudo mount -t nfs 192.168.2.100:/tftpboot/ /home/pi/regServer 
+    	cat /proc/cpuinfo > /home/pi/regServer/new_cpuinfo.txt
+    	ifconfig > /home/pi/regServer/new_ifconfig.txt
+	retEeprom=$(vcgencmd bootloader_config | grep BOOT_ORDER=0x21)
+	[ -z $retEeprom ] && sudo rpi-eeprom-update -d -f /lib/firmware/raspberrypi/bootloader/beta/netboot-pieeprom.bin && sudo reboot
+;;
+ 
+
+install)
+	echo installation service
+	cp $0 /etc/init.d
+	update-rc.d "$fichName" defaults
+	service "$fichName" start
+;;
+ 'status')
+    log_action_msg "custStartup is stopped."
+    exit 0
+#  fi
+  ;;
+
+stop)
+;;
+*)
+echo "Usage: /etc/init.d/custStartup start"
+exit 1
+;;
+esac
+
+exit 0

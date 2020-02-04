@@ -1,0 +1,48 @@
+#!/bin/bash
+
+dnsmasqEntry() { # $1 noPod $2 numSeqdsPod
+	echo "###===---  ---===###"
+	retMac=$(cat /tftpboot/new_ifconfig.txt | grep ether | awk -F' ' 'NR==1{print $2}')
+	retMacRef=$(cat /etc/dnsmasq.conf | grep $retMac)
+	retName=$(cat /etc/dnsmasq.conf | grep Pod_$1_$2)
+	retIp=$(cat /etc/dnsmasq.conf | grep 192.168.2.$1$2)
+	retPing=$(ping 192.168.2.$1$2 -c 1 | grep "64 bytes")
+	ligDNS=$(test -z "$retMacRef$retName$retIp$retPing" && echo dhcp-host=$retMac,Pod_$1_$2,192.168.2.$1$2)
+	test -z "$ligDNS" && echo "Erreur Pod deja enregistré dans le dnsmasq ou Ip active"  && return 0
+	echo Inscription dans le regisre DNSMASQ pour affectation IP permanente
+	echo $ligDNS
+	sudo echo $ligDNS >> /etc/dnsmasq.conf
+	sudo service dnsmasq restart
+	echo "######## #######"
+}
+
+tftpbootEntry() { #
+	retSerial=$(cat /tftpboot/new_cpuinfo.txt | grep Serial | cut -c 19-)
+	ls /tftpboot/$retSerial 2> null
+	[ $? != 0 ] && cp -r /tftpboot/model /tftpboot/$retSerial && chmod 777 /tftpboot/$retSerial && echo NetBoot de $retSerial ok &&  return 0
+	echo Repertoire $retSerial existe déja erreur ! faites le ménage avant 	
+}
+
+case "$1" in
+  ref)
+	dnsmasqEntry $2 $3
+	tftpbootEntry
+    ;;
+  scan)
+    ;;
+  stop)
+    echo ""
+    stop
+    echo "done"
+    ;;
+  uninstall)
+    ;;
+  stat)
+    ;;
+  install)
+    ;;
+  restart)
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|uninstall}"
+esac

@@ -1,0 +1,7 @@
+#!/bin/bash
+echo "mcmd \"ssh IP \\\"$1\\\"\" $2 $3 $4 $5" > /tmp/_mssh.sh
+chmod 777 /tmp/_mssh.sh 
+[ "$5" = "-v" ] && cat /tmp/_mssh.sh
+/tmp/_mssh.sh
+
+ 

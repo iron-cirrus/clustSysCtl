@@ -1,0 +1,4 @@
+#!/bin/bash
+while true; do 	nc -l -v 3333 2> status && ip=$(cat status | grep -o -P '(?<=from).*(?=port)') && echo "$ip" ;done
+
+

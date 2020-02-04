@@ -1,0 +1,26 @@
+#!/bin/bash
+if [ "$3" = "" ] || [ "$3" = "." ] ; then lPods="$(seq 1 4)"
+else lPods="$3" ; fi
+
+if [ "$4" = "" ] || [ "$4" = "." ] ; then lNodes="$(seq 1 4)" 
+else lNodes="$4" ; fi
+
+[ "$5" = "-v" ] && echo Pods:"$lPods" Nodes:"$lNodes"
+
+for p in $lPods ; do
+	for i in $lNodes ;  do 
+		namePod=Pod"$p""$i" 
+		cmd=${1//NAME/$namePod} 
+		cmd=${cmd//IP/192.168.2.$p$i}
+		cmd=${cmd//NUM/$p$i}
+		regExp='s/.*/'"$namePod"' &/'
+		[ "$5" = "-v" ] && echo cmd:"$cmd 2>&1 | sed -e $regExp"
+
+		[ "$2" = "inter" ] && $cmd
+		echo "$cmd 2>&1 | sed -e \"$regExp\"" > /tmp/cmd"$$""$namePod".sh
+		chmod 777 /tmp/cmd"$$""$namePod".sh
+		[ "$2" = "sync" ] || [ "$2" = "" ] && /tmp/cmd"$$""$namePod".sh
+		[ "$2" = "async" ] && /tmp/cmd"$$""$namePod".sh & 
+		# sudo hostname $(echo $namePod | sed -r 's/[_]+/-/g') & 
+	done
+done

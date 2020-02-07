@@ -1,4 +1,5 @@
 #!/bin/bash
+# commande à executer sur le server DHCP apres le premier boot d'un nouveau PI
 
 dnsmasqEntry() { # $1 noPod $2 numSeqdsPod
 	echo "###===---  ---===###"

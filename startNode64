@@ -1,0 +1,64 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides: startNode64
+# Required-Start: $all
+# Required-Stop:
+# Should-Start:
+# Should-Stop:
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Start and stop startNode
+# Description: startNode
+### END INIT INFO
+
+fichName="startNode64"
+path_to_ovpn_files="/home/pi"
+
+# Do NOT change anything below this line unless you know what you are doing!
+
+
+case "$1" in
+start)
+	echo "StartNode64 on Cluster"
+	IP=$(ip address show dev eth0 | grep inet | cut -c 10-25 | cut -f 1 -d '/')
+	echo IP : $IP
+	NAME=$(cat /boot/dnsmasq.server | grep $IP | cut -f 2 -d ',')
+	NUM=$(echo $IP | cut -f 4 -d '.')
+	echo Nom du Node defini sur le server : $NAME
+	echo Set Hostname en 64
+	hostname "$NAME"64
+	echo $NAME ---===XXX Fin de boot 64 XXX===--- | nc master 3333 -N
+	sudo /etc/init.d/networking restart
+	sudo service winbind restart
+	echo FINBOOT64 | nc master 33$NUM -N
+
+	echo lancement VNC 
+	su pi -c "/opt/TurboVNC/bin/vncserver :1"
+;;
+install)
+	$0 stop
+	echo installation service
+	cp $0 /etc/init.d
+	update-rc.d "$fichName" defaults
+	service "$fichName" start
+	ps -ef | grep $0
+;;
+ 'status')
+    	log_action_msg "startNode is stopped."
+   	exit 0
+  ;;
+
+stop)
+	echo "Closing startNode "
+	exec 1>/var/log/"$fichName".service.log 2>&1
+
+	killall $0
+;;
+*)
+	echo "Usage: /etc/init.d/startNode {start|stop}"
+	exit 1
+;;
+esac
+
+exit 0

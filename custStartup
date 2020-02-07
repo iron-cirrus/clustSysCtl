@@ -8,9 +8,11 @@
 # Should-Stop:
 # Default-Start: 2 3 4 5
 # Default-Stop: 0 1 6
-# Short-Description: Start and stop OpenVPN
+# Short-Description: post boot de la carte raspbian buster v7 qui patch le nouveau PI et envoie les info au DHCP
 # Description: OpenVPN
 ### END INIT INFO
+
+
 
 fichName="custStartup"
 

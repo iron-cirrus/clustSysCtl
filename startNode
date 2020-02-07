@@ -1,0 +1,93 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides: OpenVPN
+# Required-Start: $remote_fs
+# Required-Stop:
+# Should-Start:
+# Should-Stop:
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Start and stop OpenVPN
+# Description: OpenVPN
+### END INIT INFO
+
+fichName="startNode"
+path_to_ovpn_files="/home/pi"
+
+# Do NOT change anything below this line unless you know what you are doing!
+
+
+case "$1" in
+start)
+	echo "StartNode on Cluster"
+	IP=$(ip address show dev eth0 | grep inet | cut -c 10-25 | cut -f 1 -d '/')
+	echo IP : $IP
+	NAME=$(cat /boot/dnsmasq.server | grep $IP | cut -f 2 -d ',')
+	NUM=$(echo $IP | cut -f 4 -d '.')
+	echo Nom du Node defini sur le server : $NAME
+	echo Set Hostname
+	hostname $NAME
+	echo Cpu Gov Performance
+	echo performance | sudo tee -a /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+	echo Enable Performance Monitoring
+	echo 1 | sudo tee -a /proc/sys/kernel/perf_event_paranoid
+	echo Frequence courante de boot
+	sudo cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
+	echo $NAME ---===XXX Fin de boot XXX===--- | nc master 3333 -N
+	sudo /etc/init.d/networking restart
+	sudo service winbind restart
+	ls /dev/sda1 2> /dev/null && sudo mount /dev/sda1 /ssda
+	ls /dev/sda2 2> /dev/null && sudo mount /dev/sda2 /ssdb
+	ls /dev/sda 2> /dev/null && sudo mount /dev/sda /ssda
+
+	echo FINBOOT | nc master 33$NUM -N
+
+	echo "###===--- referencement Wlan / Dnsmasq Server ---===###"
+	retMac=$(ip address show dev wlan0 | grep link | cut -c 16-32)
+	retMacRef=$(cat /boot/dnsmasq.server | grep $retMac)
+	retIp=$(cat /boot/dnsmasq.server | grep 192.168.20.$NUM)
+	retPing=$(ping 192.168.20.$NUM -c 1 | grep "64 bytes")
+	ligDNS=$(test -z "$retMacRef$retIp$retPing" && echo dhcp-host=$retMac,Podw$NUM,192.168.20.$NUM)
+	if [ -z "$ligDNS" ]; then 
+		echo "Pod deja enregistré dans le dnsmasq ou Ip active"  
+	else 
+		echo Inscription dans le regisre DNSMASQ pour affectation IP permanente
+		echo $ligDNS
+		echo $ligDNS | sudo tee -a /boot/dnsmasq.server
+		echo restart DNSmasq Master
+		ssh master sudo service dnsmasq restart
+		echo restart Wlan0
+		sudo ifconfig wlan0 down
+		sudo ifconfig wlan0 up
+		echo "######## FIN Référencement #######"
+	fi
+
+
+;;
+install)
+	$0 stop
+	echo installation service
+	cp $0 /etc/init.d
+	update-rc.d "$fichName" defaults
+	service "$fichName" start
+	ps -ef | grep $0
+;;
+ 'status')
+    	log_action_msg "startNode is stopped."
+   	exit 0
+  ;;
+
+stop)
+	echo "Closing startNode "
+	exec 1>/var/log/"$fichName".service.log 2>&1
+
+	killall $0
+;;
+*)
+	echo "Usage: /etc/init.d/startNode {start|stop}"
+	exit 1
+;;
+esac
+
+exit 0

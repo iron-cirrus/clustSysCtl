@@ -35,6 +35,19 @@ start)
 
 	echo lancement VNC 
 	su pi -c "/opt/TurboVNC/bin/vncserver :1"
+	
+	echo "###===--- referencement nom / host local ---===###"
+	retMac=$(ip address show dev eth0 | grep link | cut -c 16-32)
+	retIp=$(cat /etc/hosts | grep pod"$NUM"64)
+	ligHosts=$(test -z "$retMac""retIp$" && echo 192.168.2.$NUM pod"$NAME"64)
+	if [ -z "$ligHosts" ]; then 
+		echo "Pod deja enregistré dans le Hosts active"  
+	else 
+		echo Inscription dans le regisre HOSTS pour affectation IP permanente
+		echo $ligHosts
+		echo $ligHosts | sudo tee -a /etc/hosts
+		echo "######## FIN Ref Hosts #######"
+	fi
 ;;
 install)
 	$0 stop

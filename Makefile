@@ -8,5 +8,8 @@ all:FORCE
 #mcmd:FORCE
 	#shellcheck mcmd > mcmd.check
 	sudo cp mcmd /usr/bin
-
+	sudo cp startHeadCluster /etc/init.d
+	sudo cp startHeadCluster64 /var/lib/machines/debian-stretch-64/etc/init.d
+	sudo cp startNode /nfs/client1/etc/init.d
+	sudo cp startNode /nfs/client1/var/lib/machines/debian-stretch-64/etc/init.d
 FORCE:

@@ -45,6 +45,12 @@ case "$1" in
 	PodCtl off $lPods 
 	
     ;;
+    miniostart)
+	mssh64 "/home/pi/workplace64/minio server --address :9001 http://192.168.2.{11...14}/ssda/s3-storage-folder" async "$2" "$3"
+    ;;
+    miniostop)
+	mssh64 "killall -r minio" async "$2" "$3"
+    ;;
     status)
 	cat
 	 /tmp/ipl* 2> /dev/null
